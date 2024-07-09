@@ -127,10 +127,11 @@ func (n *NodeClaim) FinalizeScheduling() {
 	delete(n.Requirements, v1.LabelHostname)
 }
 
-func (n *NodeClaim) RemoveInstanceTypeOptionsByPriceAndMinValues(reqs scheduling.Requirements, maxPrice float64) (*NodeClaim, error) {
+func (n *NodeClaim) RemoveInstanceTypeOptionsByPriceAndMinValues(reqs scheduling.Requirements, maxPrice float64, numCandidates int) (*NodeClaim, error) {
 	n.InstanceTypeOptions = lo.Filter(n.InstanceTypeOptions, func(it *cloudprovider.InstanceType, _ int) bool {
 		launchPrice := it.Offerings.Available().WorstLaunchPrice(reqs)
-		return launchPrice < maxPrice
+		return launchPrice < maxPrice || (launchPrice == maxPrice && numCandidates > 1)
+
 	})
 	if _, err := n.InstanceTypeOptions.SatisfiesMinValues(reqs); err != nil {
 		return nil, err
